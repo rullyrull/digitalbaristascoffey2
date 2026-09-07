@@ -29,6 +29,7 @@ export type Database = {
           payment: string
           price: number
           service: number
+          status: string
           tax: number
           tip: number
           total: number
@@ -48,6 +49,7 @@ export type Database = {
           payment?: string
           price?: number
           service?: number
+          status?: string
           tax?: number
           tip?: number
           total?: number
@@ -67,6 +69,7 @@ export type Database = {
           payment?: string
           price?: number
           service?: number
+          status?: string
           tax?: number
           tip?: number
           total?: number

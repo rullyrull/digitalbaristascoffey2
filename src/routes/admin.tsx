@@ -38,7 +38,7 @@ const RANGES: { id: RangeKey; label: string }[] = [
 ];
 
 function AdminPage() {
-  const { orders, isAdmin } = useBarista();
+  const { orders, isAdmin, isBarista, authReady } = useBarista();
   const [range, setRange] = useState<RangeKey>("all");
 
   const rows = useMemo(() => {
@@ -132,11 +132,37 @@ function AdminPage() {
   const signature = rows.filter((o) => o.kind === "signature").length;
   const regular = rows.length - signature;
 
+  if (authReady && !isBarista) {
+    return (
+      <PhoneShell title={t("DASHBOARD ADMIN")} back="/profile">
+        <p className="mt-4 text-sm text-muted-foreground">
+          {t("Halaman ini khusus untuk admin dan barista Scoffey.")}
+        </p>
+        <Link
+          to="/auth"
+          className="mt-4 inline-flex rounded-2xl border border-primary/60 px-4 py-2.5 text-sm font-semibold text-primary"
+        >
+          {t("Masuk sebagai staf")}
+        </Link>
+      </PhoneShell>
+    );
+  }
+
   return (
-    <PhoneShell title={t("LAPORAN BARISTA")} back="/profile" nav>
+    <PhoneShell title={isAdmin ? t("DASHBOARD ADMIN") : t("LAPORAN BARISTA")} back="/profile" nav>
       <p className="mt-3 text-sm text-muted-foreground">
         {t("Rekap transaksi dan keuangan untuk akun admin/barista Scoffey.")}
       </p>
+
+      {isBarista && (
+        <Link
+          to="/barista"
+          className="mt-3 inline-flex rounded-xl border border-primary/60 px-3 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-primary"
+        >
+          {t("Buka antrian pesanan")}
+        </Link>
+      )}
+
 
       <div className="mt-4 flex gap-2">
         {RANGES.map((r) => (

@@ -40,6 +40,8 @@ function ProfilePage() {
     addPlan,
     setPlanActive,
     removePlan,
+    isAdmin,
+    isBarista,
   } = useBarista();
   const queryClient = useQueryClient();
   const navigate = useNavigate({ from: "/profile" });
@@ -222,12 +224,22 @@ function ProfilePage() {
 
       <div className="mt-6 space-y-3 md:mt-10 md:grid md:max-w-xl md:grid-cols-2 md:gap-4 md:space-y-0">
         <OutlineButton onClick={resetCreation}>{t("Reset Racikan Saat Ini")}</OutlineButton>
-        <Link
-          to="/admin"
-          className="flex items-center justify-center gap-2 rounded-2xl border border-primary/60 py-3.5 text-sm font-semibold tracking-[0.12em] text-primary uppercase transition-colors hover:bg-accent"
-        >
-          <BarChart3 className="size-4" /> {t("Laporan Barista")}
-        </Link>
+        {isBarista && (
+          <Link
+            to="/barista"
+            className="flex items-center justify-center gap-2 rounded-2xl border border-primary/60 py-3.5 text-sm font-semibold tracking-[0.12em] text-primary uppercase transition-colors hover:bg-accent"
+          >
+            <Coffee className="size-4" /> {t("Panel Barista")}
+          </Link>
+        )}
+        {isAdmin && (
+          <Link
+            to="/admin"
+            className="flex items-center justify-center gap-2 rounded-2xl border border-primary/60 py-3.5 text-sm font-semibold tracking-[0.12em] text-primary uppercase transition-colors hover:bg-accent"
+          >
+            <BarChart3 className="size-4" /> {t("Dashboard Admin")}
+          </Link>
+        )}
         <button
           onClick={handleSignOut}
           className="flex w-full items-center justify-center gap-2 rounded-2xl border border-border py-3.5 text-sm font-semibold tracking-[0.12em] text-muted-foreground uppercase transition-colors hover:text-primary"

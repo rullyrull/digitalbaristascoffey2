@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as BaristaRouteImport } from './routes/barista'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CommunityRouteImport } from './routes/community'
 import { Route as CreationsRouteImport } from './routes/creations'
@@ -48,6 +49,11 @@ const AdminRoute = AdminRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BaristaRoute = BaristaRouteImport.update({
+  id: '/barista',
+  path: '/barista',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CheckoutRoute = CheckoutRouteImport.update({
@@ -136,6 +142,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/barista': typeof BaristaRoute
   '/checkout': typeof CheckoutRoute
   '/community': typeof CommunityRoute
   '/creations': typeof CreationsRoute
@@ -158,6 +165,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/barista': typeof BaristaRoute
   '/checkout': typeof CheckoutRoute
   '/community': typeof CommunityRoute
   '/creations': typeof CreationsRoute
@@ -181,6 +189,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/barista': typeof BaristaRoute
   '/checkout': typeof CheckoutRoute
   '/community': typeof CommunityRoute
   '/creations': typeof CreationsRoute
@@ -205,6 +214,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/admin'
     | '/auth'
+    | '/barista'
     | '/checkout'
     | '/community'
     | '/creations'
@@ -227,6 +237,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/admin'
     | '/auth'
+    | '/barista'
     | '/checkout'
     | '/community'
     | '/creations'
@@ -249,6 +260,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/admin'
     | '/auth'
+    | '/barista'
     | '/checkout'
     | '/community'
     | '/creations'
@@ -272,6 +284,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
+  BaristaRoute: typeof BaristaRoute
   CheckoutRoute: typeof CheckoutRoute
   CommunityRoute: typeof CommunityRoute
   CreationsRoute: typeof CreationsRoute
@@ -318,6 +331,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/barista': {
+      id: '/barista'
+      path: '/barista'
+      fullPath: '/barista'
+      preLoaderRoute: typeof BaristaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/checkout': {
@@ -440,6 +460,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
+  BaristaRoute: BaristaRoute,
   CheckoutRoute: CheckoutRoute,
   CommunityRoute: CommunityRoute,
   CreationsRoute: CreationsRoute,
