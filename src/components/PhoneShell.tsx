@@ -153,12 +153,15 @@ export function PhoneFrame({ children }: { children: ReactNode }) {
   );
 }
 
+export type NavItem = { to: string; label: string; icon: typeof Home };
+
 export function PhoneShell({
   children,
   title,
   step,
   back,
   nav = false,
+  navItems,
   header,
   flush = false,
 }: {
@@ -167,6 +170,8 @@ export function PhoneShell({
   step?: string;
   back?: string;
   nav?: boolean;
+  /** Custom nav items; when provided with `nav`, overrides the default bottom nav. */
+  navItems?: NavItem[];
   /** Custom header rendered inside the phone frame (e.g. CreateHeader). */
   header?: ReactNode;
   /** Remove horizontal padding on the content area. */
@@ -215,7 +220,7 @@ export function PhoneShell({
 
 
           {nav ? (
-            <BottomNav />
+            <BottomNav items={navItems} />
           ) : (
             <div className="flex justify-center pb-2 md:hidden">
               <span className="h-1 w-32 rounded-full bg-foreground/70" />
@@ -259,12 +264,12 @@ const NAV = [
   { to: "/profile", label: "Profile", icon: User },
 ];
 
-export function BottomNav() {
+export function BottomNav({ items = NAV }: { items?: NavItem[] }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
   return (
     <nav className="shrink-0 border-t border-border bg-background/60 px-3 pt-2 pb-3 md:order-2 md:border-t-0 md:border-b md:bg-transparent md:px-10 md:pt-0 md:pb-4">
       <div className="flex items-start justify-around md:justify-start md:gap-2">
-        {NAV.map(({ to, label, icon: Icon }) => {
+        {items.map(({ to, label, icon: Icon }) => {
           const active = path === to || (to !== "/home" && path.startsWith(to));
           return (
             <Link
