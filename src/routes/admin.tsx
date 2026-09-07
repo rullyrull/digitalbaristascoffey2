@@ -29,23 +29,35 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
-type RangeKey = "today" | "week" | "all";
+type RangeKey = "today" | "week" | "month" | "year";
 
 const RANGES: { id: RangeKey; label: string }[] = [
-  { id: "today", label: "Hari ini" },
-  { id: "week", label: "7 hari" },
-  { id: "all", label: "Semua" },
+  { id: "today", label: "Harian" },
+  { id: "week", label: "Mingguan" },
+  { id: "month", label: "Bulanan" },
+  { id: "year", label: "Tahunan" },
 ];
+
+function inRange(when: string, range: RangeKey) {
+  const d = new Date(when);
+  const now = new Date();
+  if (range === "today") return d.toDateString() === now.toDateString();
+  if (range === "week") {
+    const start = new Date(now);
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - 6);
+    return d >= start && d <= now;
+  }
+  if (range === "month")
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  return d.getFullYear() === now.getFullYear();
+}
 
 function AdminPage() {
   const { orders, isAdmin, authReady } = useBarista();
-  const [range, setRange] = useState<RangeKey>("all");
+  const [range, setRange] = useState<RangeKey>("today");
 
-  const rows = useMemo(() => {
-    const now = Date.now();
-    const span = range === "today" ? 864e5 : range === "week" ? 7 * 864e5 : Infinity;
-    return orders.filter((o) => now - new Date(o.when).getTime() <= span);
-  }, [orders, range]);
+  const rows = useMemo(() => orders.filter((o) => inRange(o.when, range)), [orders, range]);
 
   const sum = (pick: (o: (typeof rows)[number]) => number) =>
     rows.reduce((s, o) => s + pick(o), 0);

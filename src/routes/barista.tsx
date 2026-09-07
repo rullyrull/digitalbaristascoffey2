@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
+  CalendarClock,
   Check,
   Coffee,
   CupSoda,
@@ -122,6 +123,17 @@ function BaristaPanel() {
     return c;
   }, [rows]);
 
+  const today = useMemo(() => {
+    const key = new Date().toDateString();
+    const list = rows.filter((r) => new Date(r.created_at).toDateString() === key);
+    return {
+      count: list.length,
+      done: list.filter((r) => (r.status || "baru") === "selesai").length,
+      total: list.reduce((s, r) => s + r.total, 0),
+      tip: list.reduce((s, r) => s + r.tip, 0),
+    };
+  }, [rows]);
+
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();
     return rows.filter(
@@ -178,8 +190,22 @@ function BaristaPanel() {
 
   return (
     <PhoneShell title={t("Panel Barista")} back="/profile" nav navItems={baristaNav}>
-      {/* Ringkasan hari ini */}
-      <div className="mt-1 grid grid-cols-3 gap-2">
+      {/* Rekap harian */}
+      <div className="mt-1 rounded-2xl border border-border bg-card/60 p-4">
+        <div className="flex items-center gap-2">
+          <CalendarClock className="size-4 text-primary" />
+          <h3 className="label-caps text-primary">{t("Rekap hari ini")}</h3>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-4">
+          <RecapStat label={t("Pesanan masuk")} value={String(today.count)} />
+          <RecapStat label={t("Selesai disajikan")} value={String(today.done)} />
+          <RecapStat label={t("Omzet")} value={formatIDR(today.total)} accent />
+          <RecapStat label={t("Tip diterima")} value={formatIDR(today.tip)} accent />
+        </div>
+      </div>
+
+      {/* Ringkasan status */}
+      <div className="mt-3 grid grid-cols-3 gap-2">
         {TABS.map(({ key, label, icon: Icon }) => (
           <div
             key={key}
@@ -341,5 +367,26 @@ function BaristaPanel() {
         </p>
       )}
     </PhoneShell>
+  );
+}
+
+function RecapStat({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-background/40 p-3">
+      <p className="text-[0.68rem] uppercase tracking-[0.1em] text-muted-foreground">{label}</p>
+      <p
+        className={`display-title mt-1 text-base font-bold ${accent ? "text-primary" : "text-foreground"}`}
+      >
+        {value}
+      </p>
+    </div>
   );
 }
