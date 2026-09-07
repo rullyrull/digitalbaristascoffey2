@@ -49,7 +49,7 @@ const STATUSES = ["baru", "diproses", "selesai"] as const;
 type Status = (typeof STATUSES)[number];
 
 function BaristaPanel() {
-  const { isBarista, authReady } = useBarista();
+  const { isBarista, isAdmin, authReady } = useBarista();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -231,14 +231,16 @@ function BaristaPanel() {
         </p>
       )}
 
-      <div className="mt-6">
-        <Link
-          to="/admin"
-          className="flex items-center justify-center rounded-2xl border border-border py-3.5 text-sm font-semibold tracking-[0.12em] text-muted-foreground uppercase transition-colors hover:text-primary"
-        >
-          {t("Laporan transaksi")}
-        </Link>
-      </div>
+      {isAdmin && (
+        <div className="mt-6">
+          <Link
+            to="/admin"
+            className="flex items-center justify-center rounded-2xl border border-border py-3.5 text-sm font-semibold tracking-[0.12em] text-muted-foreground uppercase transition-colors hover:text-primary"
+          >
+            {t("Laporan transaksi")}
+          </Link>
+        </div>
+      )}
     </PhoneShell>
   );
 }
