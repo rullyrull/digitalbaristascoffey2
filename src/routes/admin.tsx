@@ -38,7 +38,7 @@ const RANGES: { id: RangeKey; label: string }[] = [
 ];
 
 function AdminPage() {
-  const { orders, isAdmin } = useBarista();
+  const { orders, isAdmin, isBarista, authReady } = useBarista();
   const [range, setRange] = useState<RangeKey>("all");
 
   const rows = useMemo(() => {
