@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { BarChart3, CalendarClock, Coffee, Heart, LogOut, Sparkles, Trash2 } from "lucide-react";
+import { BarChart3, CalendarClock, ClipboardList, Coffee, Heart, LogOut, Sparkles, Trash2, User } from "lucide-react";
 import { OutlineButton, PhoneShell } from "@/components/PhoneShell";
 import { formatIDR } from "@/lib/barista-data";
 import { useBarista } from "@/lib/barista-store";
@@ -25,6 +25,11 @@ export const Route = createFileRoute("/profile")({
   }),
   component: ProfilePage,
 });
+
+const staffNav = [
+  { to: "/barista", label: "Pesanan", icon: ClipboardList },
+  { to: "/profile", label: "Profile", icon: User },
+];
 
 function ProfilePage() {
   const {
@@ -70,7 +75,7 @@ function ProfilePage() {
   }
 
   return (
-    <PhoneShell title={t("PROFIL")} back="/home" nav>
+    <PhoneShell title={t("PROFIL")} back="/home" nav navItems={isBarista || isAdmin ? staffNav : undefined}>
       <section className="mt-3 flex items-center gap-4 rounded-2xl border border-border bg-card/60 p-4 md:gap-6 md:p-6">
         <div className="surface-gold flex size-14 shrink-0 items-center justify-center rounded-full text-xl text-primary-foreground md:size-20 md:text-3xl">
           {userName.charAt(0).toUpperCase()}
