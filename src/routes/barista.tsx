@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
+  CalendarClock,
   Check,
   Coffee,
   CupSoda,
@@ -366,5 +367,26 @@ function BaristaPanel() {
         </p>
       )}
     </PhoneShell>
+  );
+}
+
+function RecapStat({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-background/40 p-3">
+      <p className="text-[0.68rem] uppercase tracking-[0.1em] text-muted-foreground">{label}</p>
+      <p
+        className={`display-title mt-1 text-base font-bold ${accent ? "text-primary" : "text-foreground"}`}
+      >
+        {value}
+      </p>
+    </div>
   );
 }
