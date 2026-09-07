@@ -26,6 +26,11 @@ export const Route = createFileRoute("/profile")({
   component: ProfilePage,
 });
 
+const staffNav = [
+  { to: "/barista", label: "Pesanan", icon: ClipboardList },
+  { to: "/profile", label: "Profile", icon: User },
+];
+
 function ProfilePage() {
   const {
     userName,
