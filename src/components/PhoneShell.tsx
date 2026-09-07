@@ -171,7 +171,7 @@ export function PhoneShell({
   back?: string;
   nav?: boolean;
   /** Custom nav items; when provided with `nav`, overrides the default bottom nav. */
-  navItems?: NavItem[];
+  navItems?: NavItem[] | undefined;
   /** Custom header rendered inside the phone frame (e.g. CreateHeader). */
   header?: ReactNode;
   /** Remove horizontal padding on the content area. */
