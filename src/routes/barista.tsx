@@ -162,7 +162,7 @@ function BaristaPanel() {
 
   if (!isBarista) {
     return (
-      <PhoneShell title={t("Panel Barista")} back="/profile">
+      <PhoneShell title={t("Panel Barista")} back="/profile" nav navItems={baristaNav}>
         <p className="mt-4 text-sm text-muted-foreground">
           {t("Halaman ini khusus untuk barista dan admin Scoffey.")}
         </p>
@@ -177,7 +177,7 @@ function BaristaPanel() {
   }
 
   return (
-    <PhoneShell title={t("Panel Barista")} back="/profile">
+    <PhoneShell title={t("Panel Barista")} back="/profile" nav navItems={baristaNav}>
       {/* Ringkasan hari ini */}
       <div className="mt-1 grid grid-cols-3 gap-2">
         {TABS.map(({ key, label, icon: Icon }) => (

@@ -220,7 +220,7 @@ export function PhoneShell({
 
 
           {nav ? (
-            <BottomNav items={navItems} />
+            <BottomNav items={navItems ?? NAV} />
           ) : (
             <div className="flex justify-center pb-2 md:hidden">
               <span className="h-1 w-32 rounded-full bg-foreground/70" />
