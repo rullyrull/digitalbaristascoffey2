@@ -12,6 +12,7 @@ import {
   Timer,
 } from "lucide-react";
 import { PhoneShell, SectionLabel } from "@/components/PhoneShell";
+import { User, ClipboardList } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatIDR } from "@/lib/barista-data";
 import { useBarista } from "@/lib/barista-store";
@@ -144,9 +145,14 @@ function BaristaPanel() {
     setBusyId(null);
   }
 
+  const baristaNav = [
+    { to: "/barista", label: "Pesanan", icon: ClipboardList },
+    { to: "/profile", label: "Profile", icon: User },
+  ];
+
   if (!authReady) {
     return (
-      <PhoneShell title={t("Panel Barista")} back="/profile">
+      <PhoneShell title={t("Panel Barista")} back="/profile" nav navItems={baristaNav}>
         <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" /> {t("Memuat…")}
         </p>
