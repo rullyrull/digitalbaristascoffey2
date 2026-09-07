@@ -40,6 +40,8 @@ function ProfilePage() {
     addPlan,
     setPlanActive,
     removePlan,
+    isAdmin,
+    isBarista,
   } = useBarista();
   const queryClient = useQueryClient();
   const navigate = useNavigate({ from: "/profile" });
