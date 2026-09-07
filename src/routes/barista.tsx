@@ -189,8 +189,22 @@ function BaristaPanel() {
 
   return (
     <PhoneShell title={t("Panel Barista")} back="/profile" nav navItems={baristaNav}>
-      {/* Ringkasan hari ini */}
-      <div className="mt-1 grid grid-cols-3 gap-2">
+      {/* Rekap harian */}
+      <div className="mt-1 rounded-2xl border border-border bg-card/60 p-4">
+        <div className="flex items-center gap-2">
+          <CalendarClock className="size-4 text-primary" />
+          <h3 className="label-caps text-primary">{t("Rekap hari ini")}</h3>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-4">
+          <RecapStat label={t("Pesanan masuk")} value={String(today.count)} />
+          <RecapStat label={t("Selesai disajikan")} value={String(today.done)} />
+          <RecapStat label={t("Omzet")} value={formatIDR(today.total)} accent />
+          <RecapStat label={t("Tip diterima")} value={formatIDR(today.tip)} accent />
+        </div>
+      </div>
+
+      {/* Ringkasan status */}
+      <div className="mt-3 grid grid-cols-3 gap-2">
         {TABS.map(({ key, label, icon: Icon }) => (
           <div
             key={key}
