@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CheckCircle2, Coffee, RefreshCw, Timer } from "lucide-react";
+import {
+  Check,
+  Coffee,
+  CupSoda,
+  Heart,
+  Loader2,
+  RefreshCw,
+  Search,
+  Sparkles,
+  Timer,
+} from "lucide-react";
 import { PhoneShell, SectionLabel } from "@/components/PhoneShell";
 import { supabase } from "@/integrations/supabase/client";
 import { formatIDR } from "@/lib/barista-data";
@@ -14,12 +24,12 @@ export const Route = createFileRoute("/barista")({
       {
         name: "description",
         content:
-          "Panel kerja barista Scoffey: antrian pesanan masuk, takaran bahan, pesan manis pelanggan, dan status penyajian.",
+          "Antrian pesanan Scoffey untuk barista: pesanan masuk, rincian racikan, dan status penyajian.",
       },
       { property: "og:title", content: "Panel Barista — Antrian Pesanan" },
       {
         property: "og:description",
-        content: "Kelola antrian pesanan: baru, diproses, dan selesai disajikan.",
+        content: "Antrian pesanan dan racikan pelanggan untuk barista Scoffey.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -28,16 +38,18 @@ export const Route = createFileRoute("/barista")({
   component: BaristaPanel,
 });
 
-type Row = {
+type Order = {
   id: string;
   code: string;
   customer: string;
   name: string;
+  kind: string;
   total: number;
   tip: number;
   payment: string;
   option: string;
   note: string;
+  match_score: number;
   status: string;
   lines: unknown;
   created_at: string;
@@ -45,59 +57,99 @@ type Row = {
 
 type Line = { label?: string; name?: string; amount?: string; value?: string };
 
-const STATUSES = ["baru", "diproses", "selesai"] as const;
-type Status = (typeof STATUSES)[number];
+const TABS = [
+  { key: "baru", label: "Baru", icon: Coffee },
+  { key: "diproses", label: "Diproses", icon: Timer },
+  { key: "selesai", label: "Selesai", icon: Check },
+] as const;
+type Tab = (typeof TABS)[number]["key"];
+
+function timeAgo(iso: string, idLocale: boolean) {
+  const mins = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60000));
+  if (mins < 1) return idLocale ? "baru saja" : "just now";
+  if (mins < 60) return idLocale ? `${mins} mnt lalu` : `${mins} min ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return idLocale ? `${hrs} jam lalu` : `${hrs} h ago`;
+  return new Date(iso).toLocaleDateString(idLocale ? "id-ID" : "en-US");
+}
 
 function BaristaPanel() {
-  const { isBarista, isAdmin, authReady } = useBarista();
-  const [rows, setRows] = useState<Row[]>([]);
+  const { isBarista, authReady } = useBarista();
+  const [rows, setRows] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<Status>("baru");
+  const [tab, setTab] = useState<Tab>("baru");
+  const [query, setQuery] = useState("");
+  const [busyId, setBusyId] = useState<string | null>(null);
 
-  const load = useCallback(() => {
-    setLoading(true);
-    supabase
+  const idLocale = getLang() === "id";
+  const locale = idLocale ? "id-ID" : "en-US";
+
+  const load = useCallback(async () => {
+    const { data, error: err } = await supabase
       .from("orders")
       .select("*")
       .order("created_at", { ascending: false })
-      .limit(200)
-      .then(({ data, error: err }) => {
-        if (err) setError(err.message);
-        else {
-          setError(null);
-          setRows((data ?? []) as unknown as Row[]);
-        }
-        setLoading(false);
-      });
+      .limit(200);
+    if (err) setError(err.message);
+    else {
+      setError(null);
+      setRows((data ?? []) as Order[]);
+    }
+    setLoading(false);
   }, []);
 
   useEffect(() => {
-    if (isBarista) load();
+    if (!isBarista) return;
+    void load();
+    const channel = supabase
+      .channel("barista-orders")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () =>
+        void load(),
+      )
+      .subscribe();
+    const poll = setInterval(() => void load(), 30000);
+    return () => {
+      void supabase.removeChannel(channel);
+      clearInterval(poll);
+    };
   }, [isBarista, load]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { baru: 0, diproses: 0, selesai: 0 };
-    rows.forEach((r) => (c[r.status] = (c[r.status] ?? 0) + 1));
+    rows.forEach((r) => (c[r.status || "baru"] = (c[r.status || "baru"] ?? 0) + 1));
     return c;
   }, [rows]);
 
-  const list = rows.filter((r) => (r.status || "baru") === tab);
-  const locale = getLang() === "id" ? "id-ID" : "en-US";
+  const list = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return rows.filter(
+      (r) =>
+        (r.status || "baru") === tab &&
+        (!q ||
+          r.name.toLowerCase().includes(q) ||
+          r.customer.toLowerCase().includes(q) ||
+          r.code.toLowerCase().includes(q)),
+    );
+  }, [rows, tab, query]);
 
-  async function setStatus(id: string, status: Status) {
+  async function setStatus(id: string, status: Tab) {
+    setBusyId(id);
     setRows((rs) => rs.map((r) => (r.id === id ? { ...r, status } : r)));
     const { error: err } = await supabase.from("orders").update({ status }).eq("id", id);
     if (err) {
       setError(err.message);
-      load();
+      void load();
     }
+    setBusyId(null);
   }
 
   if (!authReady) {
     return (
       <PhoneShell title={t("Panel Barista")} back="/profile">
-        <p className="mt-4 text-sm text-muted-foreground">{t("Memuat…")}</p>
+        <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="size-4 animate-spin" /> {t("Memuat…")}
+        </p>
       </PhoneShell>
     );
   }
@@ -120,60 +172,106 @@ function BaristaPanel() {
 
   return (
     <PhoneShell title={t("Panel Barista")} back="/profile">
-      <SectionLabel
-        action={
-          <button
-            type="button"
-            onClick={load}
-            className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[0.68rem] uppercase text-muted-foreground"
+      {/* Ringkasan hari ini */}
+      <div className="mt-1 grid grid-cols-3 gap-2">
+        {TABS.map(({ key, label, icon: Icon }) => (
+          <div
+            key={key}
+            className="rounded-2xl border border-border bg-card/60 px-3 py-2.5 text-center"
           >
-            <RefreshCw className="size-3" /> {t("Muat ulang")}
-          </button>
-        }
-      >
-        {t("Antrian pesanan")}
-      </SectionLabel>
+            <Icon className="mx-auto size-4 text-primary" />
+            <p className="mt-1 text-lg font-bold text-foreground">{counts[key] ?? 0}</p>
+            <p className="label-caps text-muted-foreground">{t(label)}</p>
+          </div>
+        ))}
+      </div>
 
-      {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
+      <div className="mt-4">
+        <SectionLabel
+          action={
+            <button
+              type="button"
+              onClick={() => {
+                setLoading(true);
+                void load();
+              }}
+              className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[0.68rem] uppercase text-muted-foreground"
+            >
+              <RefreshCw className="size-3" /> {t("Muat ulang")}
+            </button>
+          }
+        >
+          {t("Antrian pesanan")}
+        </SectionLabel>
+      </div>
 
+      {/* Cari pesanan */}
+      <label className="mt-3 flex items-center gap-2 rounded-2xl border border-border bg-card/60 px-3 py-2.5">
+        <Search className="size-4 text-muted-foreground" />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={t("Cari nama, pelanggan, atau kode…")}
+          className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/60"
+        />
+      </label>
+
+      {/* Tab status */}
       <div className="mt-3 grid grid-cols-3 gap-2">
-        {STATUSES.map((s) => (
+        {TABS.map(({ key, label }) => (
           <button
-            key={s}
+            key={key}
             type="button"
-            onClick={() => setTab(s)}
+            onClick={() => setTab(key)}
             className={`rounded-2xl border px-2 py-2 text-xs font-semibold uppercase tracking-[0.08em] ${
-              tab === s
-                ? "border-primary/60 text-primary"
+              tab === key
+                ? "border-primary/60 bg-primary/10 text-primary"
                 : "border-border text-muted-foreground"
             }`}
           >
-            {s === "baru" ? t("Baru") : s === "diproses" ? t("Diproses") : t("Selesai")} ·{" "}
-            {counts[s] ?? 0}
+            {t(label)} · {counts[key] ?? 0}
           </button>
         ))}
       </div>
 
+      {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
+
       {loading ? (
-        <p className="mt-4 text-sm text-muted-foreground">{t("Memuat…")}</p>
+        <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="size-4 animate-spin" /> {t("Memuat…")}
+        </p>
       ) : list.length ? (
         <ul className="mt-4 space-y-3">
           {list.map((o) => {
             const lines = Array.isArray(o.lines) ? (o.lines as Line[]) : [];
+            const busy = busyId === o.id;
             return (
               <li key={o.id} className="rounded-2xl border border-border bg-card/60 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="font-semibold text-foreground">{o.name}</p>
+                    <p className="flex items-center gap-2 font-semibold text-foreground">
+                      <CupSoda className="size-4 shrink-0 text-primary" />
+                      <span className="truncate">{o.name}</span>
+                    </p>
                     <p className="mt-1 text-xs text-muted-foreground">
                       #{o.code} · {o.customer} · {o.option} · {o.payment}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(o.created_at).toLocaleString(locale)}
+                      {timeAgo(o.created_at, idLocale)} ·{" "}
+                      {new Date(o.created_at).toLocaleTimeString(locale, {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </p>
                   </div>
                   <p className="shrink-0 font-semibold text-primary">{formatIDR(o.total)}</p>
                 </div>
+
+                {o.match_score > 0 && (
+                  <p className="mt-2 inline-flex items-center gap-1 rounded-full border border-primary/30 bg-accent/30 px-2 py-0.5 text-[0.68rem] font-semibold text-primary">
+                    <Sparkles className="size-3" /> Match {o.match_score}%
+                  </p>
+                )}
 
                 {lines.length > 0 && (
                   <ul className="mt-3 space-y-1 border-t border-border/60 pt-3 text-xs text-muted-foreground">
@@ -187,8 +285,11 @@ function BaristaPanel() {
                 )}
 
                 {o.note?.trim() && (
-                  <p className="mt-3 rounded-xl border border-primary/30 bg-accent/30 px-3 py-2 text-xs text-foreground">
-                    “{o.note}”{o.tip > 0 ? ` · ${t("tip")} ${formatIDR(o.tip)}` : ""}
+                  <p className="mt-3 flex items-start gap-1.5 rounded-xl border border-primary/30 bg-accent/30 px-3 py-2 text-xs text-foreground">
+                    <Heart className="mt-0.5 size-3 shrink-0 text-primary" />
+                    <span>
+                      “{o.note}”{o.tip > 0 ? ` · ${t("tip")} ${formatIDR(o.tip)}` : ""}
+                    </span>
                   </p>
                 )}
 
@@ -196,8 +297,9 @@ function BaristaPanel() {
                   {o.status !== "diproses" && (
                     <button
                       type="button"
+                      disabled={busy}
                       onClick={() => void setStatus(o.id, "diproses")}
-                      className="inline-flex items-center gap-1 rounded-xl border border-border px-3 py-1.5 text-xs text-muted-foreground"
+                      className="inline-flex items-center gap-1 rounded-xl border border-border px-3 py-1.5 text-xs text-muted-foreground disabled:opacity-50"
                     >
                       <Timer className="size-3" /> {t("Proses")}
                     </button>
@@ -205,17 +307,19 @@ function BaristaPanel() {
                   {o.status !== "selesai" && (
                     <button
                       type="button"
+                      disabled={busy}
                       onClick={() => void setStatus(o.id, "selesai")}
-                      className="inline-flex items-center gap-1 rounded-xl border border-primary/60 px-3 py-1.5 text-xs font-semibold text-primary"
+                      className="inline-flex items-center gap-1 rounded-xl border border-primary/60 px-3 py-1.5 text-xs font-semibold text-primary disabled:opacity-50"
                     >
-                      <CheckCircle2 className="size-3" /> {t("Selesai")}
+                      <Check className="size-3" /> {t("Selesai")}
                     </button>
                   )}
                   {o.status === "selesai" && (
                     <button
                       type="button"
+                      disabled={busy}
                       onClick={() => void setStatus(o.id, "baru")}
-                      className="rounded-xl border border-border px-3 py-1.5 text-xs text-muted-foreground"
+                      className="rounded-xl border border-border px-3 py-1.5 text-xs text-muted-foreground disabled:opacity-50"
                     >
                       {t("Buka lagi")}
                     </button>
@@ -229,17 +333,6 @@ function BaristaPanel() {
         <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
           <Coffee className="size-4" /> {t("Tidak ada pesanan pada status ini.")}
         </p>
-      )}
-
-      {isAdmin && (
-        <div className="mt-6">
-          <Link
-            to="/admin"
-            className="flex items-center justify-center rounded-2xl border border-border py-3.5 text-sm font-semibold tracking-[0.12em] text-muted-foreground uppercase transition-colors hover:text-primary"
-          >
-            {t("Laporan transaksi")}
-          </Link>
-        </div>
       )}
     </PhoneShell>
   );
