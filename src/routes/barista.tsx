@@ -122,6 +122,17 @@ function BaristaPanel() {
     return c;
   }, [rows]);
 
+  const today = useMemo(() => {
+    const key = new Date().toDateString();
+    const list = rows.filter((r) => new Date(r.created_at).toDateString() === key);
+    return {
+      count: list.length,
+      done: list.filter((r) => (r.status || "baru") === "selesai").length,
+      total: list.reduce((s, r) => s + r.total, 0),
+      tip: list.reduce((s, r) => s + r.tip, 0),
+    };
+  }, [rows]);
+
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();
     return rows.filter(
